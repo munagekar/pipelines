@@ -371,6 +371,28 @@ class TestCompiler(unittest.TestCase):
     """Test a pipeline with a volume and volume mount."""
     self._test_py_compile_yaml('volume')
 
+  def test_py_retry_policy(self):
+      """Test retry policy is set."""
+
+      policy = 'Always'
+
+      def my_pipeline():
+        some_op().set_retry(2, policy)
+
+      workflow = kfp.compiler.Compiler()._compile(my_pipeline)
+      name_to_template = {template['name']: template for template in workflow['spec']['templates']}
+      main_dag_tasks = name_to_template[workflow['spec']['entrypoint']]['dag']['tasks']
+      template = name_to_template[main_dag_tasks[0]['template']]
+
+      self.assertEqual(template['retryStrategy']['retryPolicy'], policy)
+
+  def test_py_retry_policy_invalid(self):
+      def my_pipeline():
+          some_op().set_retry(2, 'Invalid')
+
+      with self.assertRaises(ValueError):
+          kfp.compiler.Compiler()._compile(my_pipeline)
+
   def test_py_retry(self):
     """Test retry functionality."""
     number_of_retries = 137
@@ -712,7 +734,7 @@ implementation:
       container = template.get('container', None)
       if container:
         self.assertEqual(template['retryStrategy']['limit'], 5)
-  
+
   def test_image_pull_policy(self):
     def some_op():
       return dsl.ContainerOp(
@@ -734,7 +756,7 @@ implementation:
       if container:
         self.assertEqual(template['container']['imagePullPolicy'], "Always")
 
-  
+
   def test_image_pull_policy_step_spec(self):
     def some_op():
       return dsl.ContainerOp(
@@ -1016,6 +1038,13 @@ implementation:
     workflow_dict = compiler.Compiler()._compile(some_pipeline)
     for template in workflow_dict['spec']['templates']:
       self.assertNotEqual(template['name'], '')
+
+  def test_empty_string_pipeline_parameter_defaults(self):
+    def some_pipeline(param1: str = ''):
+      pass
+
+    workflow_dict = kfp.compiler.Compiler()._compile(some_pipeline)
+    self.assertEqual(workflow_dict['spec']['arguments']['parameters'][0].get('value'), '')
 
   def test_preserving_parameter_arguments_map(self):
     component_2_in_1_out_op = kfp.components.load_component_from_text('''
