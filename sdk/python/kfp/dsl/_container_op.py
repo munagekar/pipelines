@@ -744,6 +744,7 @@ class BaseOp(object):
         self.affinity = {}
         self.pod_annotations = {}
         self.pod_labels = {}
+        self.priority_class_name = None
         self.retry_policy = None
         self.num_retries = 0
         self.timeout = 0
@@ -876,6 +877,16 @@ class BaseOp(object):
         """
 
         self.pod_labels[name] = value
+        return self
+
+
+    def set_priority_class_name(self, name):
+        """Adds a priority class to the pod
+
+        Args:
+          name: The name of priority_class
+        """
+        self.priority_class_name = name
         return self
 
     def set_retry(self, num_retries: int, policy: str = None):
