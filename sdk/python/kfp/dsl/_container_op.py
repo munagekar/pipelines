@@ -879,8 +879,7 @@ class BaseOp(object):
         self.pod_labels[name] = value
         return self
 
-
-    def set_priority_class_name(self, name):
+    def set_priority_class_name(self, name: str):
         """Adds a priority class to the pod
 
         Args:
@@ -889,7 +888,7 @@ class BaseOp(object):
         self.priority_class_name = name
         return self
 
-    def set_retry(self, num_retries: int, policy: str = None):
+    def set_retry(self, num_retries: int, policy: Optional[str] = None):
         """Sets the number of times the task is retried until it's declared failed.
 
         Args:
